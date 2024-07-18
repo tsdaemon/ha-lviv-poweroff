@@ -3,8 +3,8 @@ from pathlib import Path
 from aioresponses import aioresponses
 import pytest
 
-from homeassistant.components.lviv_poweroff.energyua_scrapper import EnergyUaScrapper
-from homeassistant.components.lviv_poweroff.entities import PowerOffPeriod
+from lviv_poweroff.energyua_scrapper import EnergyUaScrapper
+from lviv_poweroff.entities import PowerOffPeriod
 
 
 @pytest.fixture
@@ -15,6 +15,7 @@ def energyua_page():
         return file.read()
 
 
+@pytest.mark.asyncio
 async def test_energyua_scrapper(energyua_page) -> None:
     # Given a response from the EnergyUa website
     with aioresponses() as mock:
