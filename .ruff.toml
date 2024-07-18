@@ -1,0 +1,12 @@
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = [
+    "E", "F", "I", "N", "UP", "INP"
+]
+
+ignore = []
+
+[tool.ruff.lint.isort]
+known-local-folder = ["app"]
