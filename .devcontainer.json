@@ -1,13 +1,16 @@
 {
     "name": "ha-lviv-poweroff",
-    "context": "..",
     "dockerFile": "Dockerfile",
     "forwardPorts": [8123],
+    "postCreateCommand": "scripts/setup",
     "portsAttributes": {
         "8123": {
             "label": "Home Assistant",
             "onAutoForward": "notify"
         }
+    },
+    "containerEnv": {
+        "PYTHONASYNCIODEBUG": "1"
     },
     "customizations": {
         "vscode": {
