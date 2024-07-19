@@ -10,6 +10,7 @@ __pycache__
 .vscode/settings.json
 coverage.xml
 .ruff_cache
+.python-version
 
 # Home Assistant configuration
 config/*
