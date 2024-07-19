@@ -8,6 +8,9 @@ POWEROFF_GROUP_CONF = "poweroff_group"
 
 UPDATE_INTERVAL = 600
 
+STATE_ON = "Power ON"
+STATE_OFF = "Power OFF"
+
 
 class PowerOffGroup(StrEnum):
     """PowerOff groups in Lviv oblast."""
