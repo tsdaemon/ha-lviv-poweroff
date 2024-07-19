@@ -28,24 +28,24 @@ class LvivPowerOffSensorDescription(SensorEntityDescription):
 SENSOR_TYPES: tuple[LvivPowerOffSensorDescription, ...] = (
     LvivPowerOffSensorDescription(
         key="electricity",
-        translation_key="electricity",
         icon="mdi:transmission-tower",
         device_class=SensorDeviceClass.ENUM,
+        name="Power state",
         options=[STATE_ON, STATE_OFF],
         val_func=lambda coordinator: coordinator.current_state,
     ),
     LvivPowerOffSensorDescription(
         key="next_poweroff",
-        translation_key="next_poweroff",
         icon="mdi:calendar-remove",
         device_class=SensorDeviceClass.TIMESTAMP,
+        name="Next power off",
         val_func=lambda coordinator: coordinator.next_poweroff,
     ),
     LvivPowerOffSensorDescription(
         key="next_poweron",
-        translation_key="next_poweron",
         icon="mdi:calendar-check",
         device_class=SensorDeviceClass.TIMESTAMP,
+        name="Next power on",
         val_func=lambda coordinator: coordinator.next_poweron,
     ),
 )
