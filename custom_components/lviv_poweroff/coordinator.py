@@ -105,7 +105,7 @@ class LvivPowerOffCoordinator(DataUpdateCoordinator):
         events = []
         for period in self.periods:
             start, end = period.to_datetime_period(start_date.tzinfo)
-            if start_date <= start <= end_date and start_date <= end <= end_date:
+            if start_date <= start <= end_date or start_date <= end <= end_date:
                 events.append(self._get_calendar_event(start, end))
         return events
 

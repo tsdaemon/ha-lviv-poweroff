@@ -15,7 +15,6 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-python.pylint",
                 "ms-python.vscode-pylance",
                 "ms-python.python",
                 "ms-azuretools.vscode-docker",
@@ -26,8 +25,8 @@
                 "GitHub.copilot"
             ],
             "settings": {
-                "python.defaultInterpreterPath": "/usr/bin/python3",
-                "python.pythonPath": "/usr/bin/python3",
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.pythonPath": "/usr/local/bin/python",
                 "[python]": {
                     "editor.defaultFormatter": "charliermarsh.ruff"
                 }
