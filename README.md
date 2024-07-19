@@ -1,6 +1,6 @@
 [![SWUbanner](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-single.svg)](https://stand-with-ukraine.pp.ua/)
 
-![HA Lviv PowerOff Logo](./icons/logo@2x.png)
+![HA Lviv PowerOff Logo](./icons/icon@2x.png)
 
 # ⚡️ Home Assistant Lviv PowerOff
 
