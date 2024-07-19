@@ -37,6 +37,8 @@ Find your group by visiting [EnergyUA][energyua] website and typing your address
 
 Then you can add the integration to your dashboard and see the information about the next planned outages.
 
+
+
 Integration also provides a calendar view of planned outages. You can add it to your dashboard as well via [Calendar card][calendar-card].
 
 <!-- References -->
