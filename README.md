@@ -1,11 +1,10 @@
 [![SWUbanner](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-single.svg)](https://stand-with-ukraine.pp.ua/)
 
-![HA Lviv PowerOff Logo](./icons/icon@2x.png)
+![HA Lviv PowerOff Logo](./icons/icon.png)
 
 # ⚡️ Home Assistant Lviv PowerOff
 
-An integration for electricity shutdowns in Lviv and Lvivska oblast. Based on data from
-[EnergyUA][energyua].
+An integration for electricity shutdowns in  [LvivOblEnergo](lvivoblenergo). Based on data from [EnergyUA][energyua].
 
 This integration for [Home Assistant][home-assistant] provides information about planned electricity shutdowns by [LvivOblEnergo](lvivoblenergo) in Lvivska oblast:
 calendar of planned shutdowns, time sensors for the next planned power on and off events. It is based on messages posted by a community
