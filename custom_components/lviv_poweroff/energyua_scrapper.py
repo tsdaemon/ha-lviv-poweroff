@@ -39,12 +39,11 @@ class EnergyUaScrapper:
             for item in grafiks_today:
                 start, end = self._parse_item(item)
                 results.append(PowerOffPeriod(start, end, today=True))
-            graphiks_tomorrow = grafiks[1].find_all(
-                "div", class_="grafik_string_list_item"
-            )
-            for item in graphiks_tomorrow:
-                start, end = self._parse_item(item)
-                results.append(PowerOffPeriod(start, end, today=False))
+            if len(grafiks) > 1:
+                graphiks_tomorrow = grafiks[1].find_all("div", class_="grafik_string_list_item")
+                for item in graphiks_tomorrow:
+                    start, end = self._parse_item(item)
+                    results.append(PowerOffPeriod(start, end, today=False))
             return results
 
     def _parse_item(self, item: BeautifulSoup) -> tuple[int, int]:

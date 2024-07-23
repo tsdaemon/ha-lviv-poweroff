@@ -1,7 +1,3 @@
-
-# Loads default set of integrations. Do not remove.
-default_config:
-
 # Remote Python Debugger
 # https://www.home-assistant.io/integrations/debugpy/
 debugpy:

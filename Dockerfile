@@ -12,3 +12,4 @@ COPY requirements.txt .pre-commit-config.yaml ./
 RUN pip install -r requirements.txt
 
 ENV SHELL /bin/bash
+ENV MYPYPATH "/workspaces/ha-lviv-poweroff/custom_components"

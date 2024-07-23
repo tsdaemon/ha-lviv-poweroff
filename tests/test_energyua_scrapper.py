@@ -7,31 +7,50 @@ from lviv_poweroff.energyua_scrapper import EnergyUaScrapper
 from lviv_poweroff.entities import PowerOffPeriod
 
 
-@pytest.fixture
-def energyua_page():
-    test_file = Path(__file__).parent / "energyua_page.html"
+def load_energyua_page(group: str):
+    test_file = Path(__file__).parent / f"energyua_{group.replace(".", "")}_page.html"
 
     with open(test_file, encoding="utf-8") as file:
         return file.read()
 
 
 @pytest.mark.asyncio
-async def test_energyua_scrapper(energyua_page) -> None:
+@pytest.mark.parametrize(
+    "group,expected_result",
+    [
+        (
+            "1.2",
+            [
+                PowerOffPeriod(23, 0, today=True),
+                PowerOffPeriod(0, 2, today=True),
+                PowerOffPeriod(6, 8, today=True),
+                PowerOffPeriod(11, 14, today=True),
+                PowerOffPeriod(16, 20, today=True),
+                PowerOffPeriod(22, 0, today=True),
+                PowerOffPeriod(7, 9, today=False),
+                PowerOffPeriod(19, 21, today=False),
+            ],
+        ),
+        (
+            "1.1",
+            [
+                PowerOffPeriod(0, 1, today=True),
+                PowerOffPeriod(7, 9, today=True),
+                PowerOffPeriod(14, 15, today=True),
+                PowerOffPeriod(19, 22, today=True),
+            ],
+        ),
+    ],
+)
+async def test_energyua_scrapper(group, expected_result) -> None:
     # Given a response from the EnergyUa website
     with aioresponses() as mock:
-        mock.get("https://lviv.energy-ua.info/grupa/1.1", body=energyua_page)
+        mock.get(f"https://lviv.energy-ua.info/grupa/{group}", body=load_energyua_page(group))
         # When scrapper is called for power-off periods
-        scrapper = EnergyUaScrapper("1.1")
+        scrapper = EnergyUaScrapper(group)
         poweroffs = await scrapper.get_power_off_periods()
 
     # Then the power-off periods are extracted correctly
     assert poweroffs is not None
-    assert len(poweroffs) == 8
-    assert poweroffs[0] == PowerOffPeriod(23, 0, today=True)
-    assert poweroffs[1] == PowerOffPeriod(0, 2, today=True)
-    assert poweroffs[2] == PowerOffPeriod(6, 8, today=True)
-    assert poweroffs[3] == PowerOffPeriod(11, 14, today=True)
-    assert poweroffs[4] == PowerOffPeriod(16, 20, today=True)
-    assert poweroffs[5] == PowerOffPeriod(22, 0, today=True)
-    assert poweroffs[6] == PowerOffPeriod(7, 9, today=False)
-    assert poweroffs[7] == PowerOffPeriod(19, 21, today=False)
+    assert len(poweroffs) == len(expected_result)
+    assert poweroffs == expected_result
