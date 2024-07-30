@@ -35,7 +35,7 @@ class EnergyUaScrapper:
             soup = BeautifulSoup(content, "html.parser")
             results = []
             grafiks = soup.find_all("div", class_="grafik_string_list")
-            if len(grafiks) == 0:
+            if len(grafiks) > 0:
                 grafiks_today = grafiks[0].find_all("div", class_="grafik_string_list_item")
                 for item in grafiks_today:
                     start, end = self._parse_item(item)
