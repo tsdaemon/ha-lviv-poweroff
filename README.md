@@ -49,6 +49,8 @@ Integration also provides a calendar view of planned outages. You can add it to 
 [lvivoblenergo]: https://loe.lviv.ua/
 [home-assistant]: https://www.home-assistant.io/
 [hacs-url]: https://github.com/hacs/integration
-[hasc-install-url]: https://my.home-assistant.io/redirect/hacs_repository/?owner=denysdovhan&repository=ha-yasno-outages&category=integration
+[hasc-install-url]: https://my.home-assistant.io/redirect/hacs_repository/?owner=tsdaemon&repository=ha-lviv-poweroff&category=integration
 [hacs-install-image]: https://my.home-assistant.io/badges/hacs_repository.svg
 [calendar-card]: https://www.home-assistant.io/dashboards/calendar/
+
+ha-yasno-outages
