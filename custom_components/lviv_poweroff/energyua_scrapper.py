@@ -1,15 +1,16 @@
 """Provides classes for scraping power off periods from the Energy UA website."""
 
+import json
 import re
 
 import aiohttp
-from bs4 import BeautifulSoup
 
 from .const import PowerOffGroup
 from .entities import PowerOffPeriod
 
 URL = "https://lviv.energy-ua.info/grupa/{}"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+
 
 class EnergyUaScrapper:
     """Class for scraping power off periods from the Energy UA website."""
@@ -48,30 +49,50 @@ class EnergyUaScrapper:
             session.get(URL.format(self.group)) as response,
         ):
             content = await response.text()
-            soup = BeautifulSoup(content, "html.parser")
+
             results = []
-            scale_hours = soup.find_all("div", class_="scale_hours")
-            if len(scale_hours) > 0:
-                scale_hours_el = scale_hours[0].find_all("div", class_="scale_hours_el")
-                for item in scale_hours_el:
-                    if item.find("span", class_="hour_active"):
-                        start, end = self._parse_item(item)
-                        results.append(PowerOffPeriod(start, end, today=True))
-                results = self.merge_periods(results)
-            if len(scale_hours) > 1:
-                tomorrow_results = []
-                scale_hours_el_tomorrow = scale_hours[1].find_all("div", class_="scale_hours_el")
-                for item in scale_hours_el_tomorrow:
-                    if item.find("span", class_="hour_active"):
-                        start, end = self._parse_item(item)
-                        tomorrow_results.append(PowerOffPeriod(start, end, today=False))
-                results += self.merge_periods(tomorrow_results)
 
-            return results
+            # Extract today's periods from embedded JSON timestamps
+            today_periods = self._extract_json_periods(content, "periods")
+            for period in today_periods:
+                if period.get("status") == "red":
+                    results.append(PowerOffPeriod(
+                        start=period["time_from"],
+                        end=period["time_to"],
+                        today=True,
+                    ))
 
-    def _parse_item(self, item: BeautifulSoup) -> tuple[int, int]:
-        start_hour = item.find("i", class_="hour_info_from")
-        end_hour = item.find("i", class_="hour_info_to")
-        if start_hour and end_hour:
-            return int(start_hour.text.split(':')[0]), int(end_hour.text.split(':')[0])
-        raise ValueError(f"Time period not found in the input string: {item.text}")
+            # Extract tomorrow's periods from embedded JSON timestamps
+            tomorrow_periods = self._extract_json_periods(content, "tomorrowPeriods")
+            for period in tomorrow_periods:
+                if period.get("status") == "red":
+                    results.append(PowerOffPeriod(
+                        start=period["time_from"],
+                        end=period["time_to"],
+                        today=False,
+                    ))
+
+            today_results = self.merge_periods(
+                [p for p in results if p.today]
+            )
+            tomorrow_results = self.merge_periods(
+                [p for p in results if not p.today]
+            )
+
+            return today_results + tomorrow_results
+
+    @staticmethod
+    def _extract_json_periods(content: str, var_name: str) -> list[dict]:
+        """Extract JSON period data from embedded JavaScript."""
+        if var_name == "tomorrowPeriods":
+            pattern = r"const\s+tomorrowPeriods\s*=\s*Object\.values\(([\[\{].*?[\]\}])\)"
+        else:
+            pattern = r"const\s+" + var_name + r"\s*=\s*(\[.*?\])\s*;"
+
+        match = re.search(pattern, content, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except (json.JSONDecodeError, IndexError):
+                return []
+        return []
