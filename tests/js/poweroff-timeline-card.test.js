@@ -1051,6 +1051,39 @@ describe('PowerOffTimelineCard', () => {
       expect(card.content.querySelector('.legend-battery')).not.toBeNull();
     });
 
+    it('glides the line to its new spot instead of jumping when the forecast changes', () => {
+      const at = (h) => {
+        const d = new Date(Date.now() + h * HOUR);
+        return d.getHours() + d.getMinutes() / 60;
+      };
+      const [from, to] = [at(0.25), at(0.5)];
+      if (to < from) return; // the half hour crosses midnight: the mark moves to another tab
+      const frames = [];
+      const { requestAnimationFrame: raf, cancelAnimationFrame: caf } = dom.window;
+      dom.window.requestAnimationFrame = (cb) => frames.push(cb);
+      dom.window.cancelAnimationFrame = () => {};
+      const t0 = dom.window.performance.now();
+      try {
+        withBattery();
+        card.hass = makeHass({ state: '0.25', attributes: { unit_of_measurement: 'h' } });
+        showDayOf(new Date());
+        expect(card._markHours).toBeCloseTo(from, 1); // first render: no animation
+        card.hass = makeHass({ state: '0.5', attributes: { unit_of_measurement: 'h' } });
+        expect(frames.length).toBe(1);
+        expect(card._markHours).toBeCloseTo(from, 1); // still at the old spot
+        frames.shift()(t0 + 600); // halfway
+        expect(card._markHours).toBeGreaterThan(from + 0.01);
+        expect(card._markHours).toBeLessThan(to - 0.01);
+        frames.shift()(t0 + 5000); // past the end
+        expect(card._markHours).toBeCloseTo(to, 1);
+        const line = card.content.querySelector('.battery-mark line');
+        expect(line.getAttribute('x1')).toBe(card.batteryMarkGeometry(card._markHours).x1);
+      } finally {
+        dom.window.requestAnimationFrame = raf;
+        dom.window.cancelAnimationFrame = caf;
+      }
+    });
+
     it('puts the line only on the tab of the day the battery runs out', () => {
       withBattery();
       card.hass = makeHass({ state: '30', attributes: { unit_of_measurement: 'h' } }, 40);

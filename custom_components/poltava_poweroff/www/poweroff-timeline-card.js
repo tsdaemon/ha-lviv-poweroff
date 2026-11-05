@@ -1,4 +1,4 @@
-const CARD_VERSION = '1.3.0';
+const CARD_VERSION = '1.3.1';
 
 // The card's own font: the same look on any OS/browser (and identical screenshots in tests).
 // Inter (SIL OFL 1.1), Latin + Cyrillic only, ~67 KB. The files live next to the card: www/fonts/.
@@ -31,6 +31,11 @@ function loadCardFonts() {
     face.load().catch(() => { /* no file: the fallback font from the stack is used */ });
   });
 }
+
+// Spiral geometry: shared by the segments and the battery mark (also while it animates).
+const SPIRAL = { ARC_WIDTH: 45, INITIAL_RADIUS: 35, RADIUS_STEP: 2.3 };
+// How long the battery mark glides to its new spot when the forecast changes.
+const BATTERY_MARK_ANIM_MS = 1200;
 
 const QUEUES = ['1.1', '1.2', '2.1', '2.2', '3.1', '3.2', '4.1', '4.2', '5.1', '5.2', '6.1', '6.2'];
 
@@ -618,6 +623,7 @@ class PowerOffTimelineCard extends HTMLElement {
         ${loading ? this.renderLoadingLine(shownQueue) : this.renderUpdatedLine(entity)}
       </div>
     `;
+    this.animateBatteryMark();
   }
 
   buildPattern(periods) {
@@ -671,23 +677,75 @@ class PowerOffTimelineCard extends HTMLElement {
     return { hours, now, until, target: validTarget, ok: !validTarget || until >= validTarget };
   }
 
-  /** Red radial line across the spiral band at the moment the battery runs out. */
-  renderBatteryMark(until, initialRadius, radiusStep, arcWidth) {
-    const hours = until.getHours() + until.getMinutes() / 60;
-    // Same geometry as the segments: two 12-hour turns, the band's inner radius grows by radiusStep per half hour
+  /** Coordinates of the battery mark at `hours` (0..24) on the spiral. */
+  batteryMarkGeometry(hours) {
+    const { ARC_WIDTH, INITIAL_RADIUS, RADIUS_STEP } = SPIRAL;
+    // Same geometry as the segments: two 12-hour turns, the band's inner radius grows by RADIUS_STEP per half hour
     const angle = (hours * Math.PI * 2) / 12;
-    const inner = initialRadius + hours * 2 * radiusStep + arcWidth - 4;
-    const outer = inner + arcWidth + 8;
+    const inner = INITIAL_RADIUS + hours * 2 * RADIUS_STEP + ARC_WIDTH - 4;
+    const outer = inner + ARC_WIDTH + 8;
     const x = (r) => (r * Math.sin(angle)).toFixed(2);
     const y = (r) => (r * -Math.cos(angle)).toFixed(2);
-    const line = `x1="${x(inner)}" y1="${y(inner)}" x2="${x(outer)}" y2="${y(outer)}" stroke-linecap="round"`;
+    return { x1: x(inner), y1: y(inner), x2: x(outer), y2: y(outer) };
+  }
+
+  /** Red radial line across the spiral band at the moment the battery runs out. */
+  renderBatteryMark(until) {
+    const hours = until.getHours() + until.getMinutes() / 60;
+    const g = this.batteryMarkGeometry(hours);
+    const line = `x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke-linecap="round"`;
     return `
-      <g class="battery-mark">
+      <g class="battery-mark" data-hours="${hours.toFixed(4)}">
         <line ${line} stroke="rgba(0,0,0,0.55)" stroke-width="8"></line>
         <line ${line} stroke="#e53935" stroke-width="4"></line>
-        <circle cx="${x(outer)}" cy="${y(outer)}" r="5" fill="#e53935" stroke="rgba(0,0,0,0.55)" stroke-width="2"></circle>
+        <circle cx="${g.x2}" cy="${g.y2}" r="5" fill="#e53935" stroke="rgba(0,0,0,0.55)" stroke-width="2"></circle>
       </g>
     `;
+  }
+
+  /**
+   * The card re-renders via innerHTML, so a CSS transition can't move the mark, and it
+   * travels along a spiral anyway (not a circle). Instead: draw it at the previously shown
+   * spot and glide the hour value to the new one, recomputing the geometry every frame.
+   */
+  animateBatteryMark() {
+    if (this._markAnim) cancelAnimationFrame(this._markAnim);
+    this._markAnim = null;
+    const mark = this.content.querySelector('.battery-mark');
+    if (!mark) {
+      this._markHours = null;
+      return;
+    }
+    const target = Number(mark.dataset.hours);
+    const from = this._markHours;
+    const canAnimate =
+      typeof requestAnimationFrame === 'function' &&
+      !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (from == null || !canAnimate || Math.abs(target - from) < 0.01) {
+      this._markHours = target;
+      return;
+    }
+
+    const lines = mark.querySelectorAll('line');
+    const dot = mark.querySelector('circle');
+    const place = (hours) => {
+      const g = this.batteryMarkGeometry(hours);
+      lines.forEach((l) => {
+        l.setAttribute('x1', g.x1); l.setAttribute('y1', g.y1);
+        l.setAttribute('x2', g.x2); l.setAttribute('y2', g.y2);
+      });
+      dot.setAttribute('cx', g.x2); dot.setAttribute('cy', g.y2);
+      this._markHours = hours;
+    };
+    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const start = performance.now();
+    place(from);
+    const step = (ts) => {
+      const t = Math.min(1, (ts - start) / BATTERY_MARK_ANIM_MS);
+      place(from + (target - from) * ease(t));
+      this._markAnim = t < 1 ? requestAnimationFrame(step) : null;
+    };
+    this._markAnim = requestAnimationFrame(step);
   }
 
   renderBatteryLine(battery) {
@@ -716,9 +774,7 @@ class PowerOffTimelineCard extends HTMLElement {
       1: 'rgb(144 238 144)', // light green: power on
       2: '#ffee5f', // yellow: transitions
     };
-    const ARC_WIDTH = 45;
-    const INITIAL_RADIUS = 35;
-    const RADIUS_STEP = 2.3;
+    const { ARC_WIDTH, INITIAL_RADIUS, RADIUS_STEP } = SPIRAL;
     const ANGLE_STEP = (Math.PI * 2) / 24;
     const now = new Date();
 
@@ -766,7 +822,7 @@ class PowerOffTimelineCard extends HTMLElement {
           ${centerCircle}
           ${segments}
           ${hourLabels}
-          ${battery ? this.renderBatteryMark(battery.until, INITIAL_RADIUS, RADIUS_STEP, ARC_WIDTH) : ''}
+          ${battery ? this.renderBatteryMark(battery.until) : ''}
           <text class="spiral-center-text center-queue" x="0" y="-20">${this.escape(queue)} черга</text>
           <text class="spiral-center-text center-date" x="0" y="10">${dateStr}</text>
           ${stats}

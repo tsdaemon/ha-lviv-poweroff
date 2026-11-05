@@ -203,9 +203,10 @@ entity: sensor.power_state
 battery_entity: sensor.ups_runtime   # remaining runtime: hours, or min / s / d units, or "H:MM"
 ```
 
-![Battery runout mark](https://raw.githubusercontent.com/OLDIN/ha-poltava-poweroff/main/pics/card_battery.png)
+![Battery runout mark](https://raw.githubusercontent.com/OLDIN/ha-poltava-poweroff/main/pics/card_battery.gif)
 
 - A **red line** on the spiral marks the moment the battery runs out (on the tab of that day), with a legend item.
+  When the load changes and the forecast jumps, the line glides along the spiral to its new spot instead of jumping.
 - A line under the spiral compares it with the next power-on (the end of the current or next outage of your home queue):
   *«Заряду вистачить до 18:40, світло о 17:00»* or, highlighted, *«Заряду не вистачить: до 03:21, світло о 04:00»*.
 - Without `battery_entity`, while the sensor is unavailable, or while another queue is shown in the switcher, the card looks exactly as before.
